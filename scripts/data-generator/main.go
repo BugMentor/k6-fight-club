@@ -222,8 +222,10 @@ func paymentWorker(ctx context.Context, pool *pgxpool.Pool, workerID, count int,
 		pType := types[rng.Intn(len(types))]
 		amount := fmt.Sprintf("%.2f", 1+rng.Float64()*9999)
 		createdAt := now.Add(-time.Duration(rng.Int63n(365*24*60*60)) * time.Second)
+		id := uuid7()
 
 		batchRows = append(batchRows, []any{
+			id,
 			userIDs[userIdx],
 			merchantIDs[merchantIdx],
 			walletIDs[userIdx],
@@ -237,7 +239,7 @@ func paymentWorker(ctx context.Context, pool *pgxpool.Pool, workerID, count int,
 			_, err := pool.CopyFrom(
 				ctx,
 				pgx.Identifier{"payments"},
-				[]string{"user_id", "merchant_id", "wallet_id", "amount", "type", "status", "created_at"},
+				[]string{"id", "user_id", "merchant_id", "wallet_id", "amount", "type", "status", "created_at"},
 				pgx.CopyFromRows(batchRows),
 			)
 			if err != nil {

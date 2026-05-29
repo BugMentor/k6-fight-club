@@ -103,6 +103,37 @@ ulimit -n 200000
 
 ---
 
+## 🧪 Synthetic Data Generation
+
+This monorepo includes a utility to populate the databases with 1 million synthetic records for consistent stress testing.
+
+### Building the Generator
+```bash
+cd scripts/data-generator/
+go build -o data-generator main.go
+```
+
+### Running the Generator
+Ensure the respective PostgreSQL instance is running. Run individually for each project:
+
+**1. Go GraphQL Project**
+```bash
+./scripts/data-generator/data-generator -db="postgres://payment:payment@localhost:5434/payments?sslmode=disable" -users=1000000 -payments=1000000 -clean=true
+```
+
+**2. Java Spring GraphQL Project**
+```bash
+./scripts/data-generator/data-generator -db="postgres://payment_user:payment_pass@localhost:55432/payment_db?sslmode=disable" -users=1000000 -payments=1000000 -clean=true
+```
+
+**3. Java Spring SOAP Project**
+```bash
+./scripts/data-generator/data-generator -db="postgres://payment_user:payment_pass@localhost:55432/payment_db?sslmode=disable" -users=1000000 -payments=1000000 -clean=true
+```
+*Note: Ensure credentials and ports match your specific `docker-compose.yaml` configuration for each project.*
+
+---
+
 ## 🆘 Troubleshooting
 
 - **PostgreSQL Connection Error**: Ensure DB container is healthy (`docker-compose ps`). Increase max connections if scaling HPA significantly.

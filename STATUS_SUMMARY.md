@@ -81,9 +81,9 @@ Successfully removed all REST endpoints from Go, Java GraphQL, and Java SOAP pro
 - ✅ k6 version: v1.6.1
 
 ## 📝 Known Issues & Limitations
-1. **Go GraphQL**: `processPayment` mutation has pre-existing SQL error (ERROR: missing FROM-clause entry for table "payment" SQLSTATE 42P01)
-2. **Java SOAP**: Startup fails with `TransientPropertyValueException` - Wallet.user references unsaved User instance (needs investigation)
-3. Load tests not yet executed due to focusing on REST removal completion
+1. ~~**Go GraphQL**: `processPayment` mutation has pre-existing SQL error (ERROR: missing FROM-clause entry for table "payment" SQLSTATE 42P01)~~ (Resolved)
+2. ~~**Java SOAP**: Startup fails with `TransientPropertyValueException` - Wallet.user references unsaved User instance~~ (Resolved)
+3. Load tests not yet executed.
 
 ## 🚀 Next Steps
 1. Investigate and fix Java SOAP startup issue (transient Wallet/User)

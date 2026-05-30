@@ -27,6 +27,80 @@ graph TD
 
 ---
 
+## 🐳 Floci EKS Simulation
+
+All three contenders run on **Floci** — a Docker-based EKS simulator that mocks the full AWS EKS + ELB lifecycle using LocalStack, K3s, and Metrics Server for HPA-driven scaling.
+
+```mermaid
+graph TD
+    subgraph Host["Docker Host"]
+        subgraph FlociServices["Floci Infrastructure"]
+            FL["Floci Container<br/>floci/floci:latest<br/>📦 AWS API (port 4566)<br/>☸️ K3s (port 6443)<br/>📊 Metrics Server"]
+            REG["Registry<br/>registry:2<br/>port 5000"]
+        end
+
+        subgraph EKS["EKS Cluster (K3s inside Floci)"]
+            subgraph payments["namespace: payments"]
+                ELB["NLB Service<br/>port 80 → 8080"]
+                HPA["HPA<br/>min:2 max:30<br/>CPU>80% / RAM>60%"]
+                PG["PostgreSQL 16<br/>4Gi/2CPU"]
+                PS1["payment-svc pod 1<br/>1Gi/1CPU"]
+                PS2["payment-svc pod 2<br/>1Gi/1CPU"]
+                PSX["… up to 30 pods"]
+            end
+        end
+
+        K6["k6 Load Test"] -->|attacks| ELB
+        ELB --> PS1 & PS2
+        PS1 --> PG
+        PS2 --> PG
+        HPA -.->|scales| PS1
+        HPA -.->|scales| PS2
+        FL -->|aws eks + elbv2 mock| ELB
+        REG -.->|image pull| PS1
+    end
+```
+
+### Floci Boot Sequence
+
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant DC as docker compose
+    participant FL as Floci Container
+    participant K3s as K3s (in Floci)
+    participant AWS as AWS API Mock
+    
+    Dev->>DC: docker compose -f benchmark/floci/docker-compose.yaml up
+    DC->>FL: start floci/floci:latest
+    DC->>FL: start registry:2
+    FL->>K3s: bootstrap K3s cluster
+    FL->>AWS: enable EKS, ELBv2, EC2 APIs
+    
+    Dev->>AWS: aws eks create-cluster
+    AWS-->>Dev: cluster ARN
+    
+    Dev->>Dev: docker build -t payment-service:latest
+    Dev->>REG: docker push payment-service:latest
+    
+    Dev->>Dev: kubectl apply -f payment-service-elb.yaml
+    Dev->>Dev: kubectl apply -f hpa.yaml
+    
+    Dev->>K6: k6 run benchmark/k6/max-capacity-test.js
+    K6->>ELB: 5000 VU attack
+    ELB->>K3s: distribute to pods
+    K3s->>HPA: CPU > 80%?
+    HPA-->>K3s: scale up!
+```
+
+Each project has its own `benchmark/floci/` directory with project-tuned manifests:
+- `docker-compose.yaml` — Floci container + local registry
+- `payment-service-elb.yaml` — Deployment, PostgreSQL, NLB service
+- `hpa.yaml` — HPA with constitutional thresholds (CPU>80%, RAM>60%)
+- `setup-eks.sh` — One-command EKS bootstrap script
+
+---
+
 ## 🏆 The Contenders
 
 | Contender | Language | Protocol | Characteristics |
